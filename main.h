@@ -10,5 +10,8 @@
 
 void execmd(int argc, char **argv);
 char *getpath(int argc, char *argv);
+int built_in(int argc, char **argv);
+void env_cmd();
+extern char **environ;
 
 #endif
