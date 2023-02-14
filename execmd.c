@@ -6,12 +6,13 @@ void execmd(int argc, char **argv){
   char *command = NULL;
     if (argv != NULL){
       command = getpath(argc, argv[0]);
+      built_in(argc, argv);
       pid = fork();
       if (pid == 0)
 	{
 	  if (execve(command, argv, NULL) == -1)
 	    {
-            perror("Error");
+		perror("Error");
 	    };
 	}
       else if (pid > 0)
