@@ -1,13 +1,27 @@
 #include "main.h"
 
 void execmd(int argc, char **argv){
-    char *command = NULL;
+  pid_t pid;
+  int status;
+  char *command = NULL;
     if (argv != NULL){
       command = getpath(argc, argv[0]);
-      printf("%s\n", command); 
-        if (execve("bin/ls", argv, NULL) == -1){
+      pid = fork();
+      if (pid == 0)
+	{
+	  if (execve(command, argv, NULL) == -1)
+	    {
             perror("Error");
-        };
+	    };
+	}
+      else if (pid > 0)
+	{
+	  waitpid(pid, &status, 0);
+	}
+      else
+	{
+	  perror("Error: fork failed\n");
+	}
     }
 
     free(command);
