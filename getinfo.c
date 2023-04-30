@@ -1,74 +1,95 @@
 #include "shell.h"
 
 /**
- * clear_info - initializes info_t struct
- * @info: struct address
+ * get_environ - Returns a string array copy of the current environment variables.
+ * @info: Structure containing potential arguments.
+ *
+ * Return: The string array copy of the current environment variables.
  */
-void clear_info(info_t *info)
+char **get_environ(info_t *info)
 {
-	info->arg = NULL;
-	info->argv = NULL;
-	info->path = NULL;
-	info->argc = 0;
+	if (!info->environ || info->env_changed) {
+		/* Free the existing environment variable array. */
+		free_string_array(info->environ);
+		/* Convert the environment list to a string array. */
+		info->environ = list_to_strings(info->env);
+		info->env_changed = 0;
+	}
+	return info->environ;
 }
 
 /**
- * set_info - initializes info_t struct
- * @info: struct address
- * @av: argument vector
+ * _unsetenv - Remove an environment variable from the list.
+ * @info: Structure containing potential arguments.
+ * @var: The environment variable to be removed.
+ *
+ * Return: 1 on successful deletion, 0 otherwise.
  */
-void set_info(info_t *info, char **av)
+int _unsetenv(info_t *info, const char *var)
 {
-	int i = 0;
-
-	info->fname = av[0];
-	if (info->arg)
-	{
-		info->argv = strtow(info->arg, " \t");
-		if (!info->argv)
-		{
-
-			info->argv = malloc(sizeof(char *) * 2);
-			if (info->argv)
-			{
-				info->argv[0] = _strdup(info->arg);
-				info->argv[1] = NULL;
-			}
+	size_t i = 0;
+	list_t *node = info->env, *prev = NULL;
+	
+	if (!node || !var)
+		return 0;
+	
+	while (node) {
+		char *p = starts_with(node->str, var);
+		if (p && *p == '=') {
+			/* If the variable is found, delete the node and update the list. */
+			if (prev)
+				prev->next = node->next;
+			else
+				info->env = node->next;
+			free(node->str);
+			free(node);
+			info->env_changed = 1;
+			return 1;
 		}
-		for (i = 0; info->argv && info->argv[i]; i++)
-			;
-		info->argc = i;
-
-		replace_alias(info);
-		replace_vars(info);
+		prev = node;
+		node = node->next;
+		i++;
 	}
+	return 0;
 }
 
 /**
- * free_info - frees info_t struct fields
- * @info: struct address
- * @all: true if freeing all fields
+ * _setenv - Initialize a new environment variable, or modify an existing one.
+ * @info: Structure containing potential arguments.
+ * @var: The environment variable to be initialized or modified.
+ * @value: The value to set the environment variable to.
+ *
+ * Return: 0 on success, 1 on failure.
  */
-void free_info(info_t *info, int all)
+int _setenv(info_t *info, const char *var, const char *value)
 {
-	ffree(info->argv);
-	info->argv = NULL;
-	info->path = NULL;
-	if (all)
-	{
-		if (!info->cmd_buf)
-			free(info->arg);
-		if (info->env)
-			free_list(&(info->env));
-		if (info->history)
-			free_list(&(info->history));
-		if (info->alias)
-			free_list(&(info->alias));
-		ffree(info->environ);
-			info->environ = NULL;
-		bfree((void **)info->cmd_buf);
-		if (info->readfd > 2)
-			close(info->readfd);
-		_putchar(BUF_FLUSH);
+	size_t var_len = _strlen(var), value_len = _strlen(value);
+	size_t buf_len = var_len + value_len + 2;
+	char *buf = malloc(buf_len);
+	list_t *node = info->env;
+	
+	if (!buf)
+		return 1;
+	
+	/* Concatenate the variable and value strings with a '=' separator. */
+	_strcpy(buf, var);
+	buf[var_len] = '=';
+	_strcpy(buf + var_len + 1, value);
+	
+	/* Search for the variable in the list, and update its value if found. */
+	while (node) {
+		char *p = starts_with(node->str, var);
+		if (p && *p == '=') {
+			free(node->str);
+			node->str = buf;
+			info->env_changed = 1;
+			return 0;
+		}
+		node = node->next;
 	}
+	
+	/* If the variable is not found, add it to the end of the list. */
+	add_node_end(&(info->env), buf, buf_len);
+	info->env_changed = 1;
+	return 0;
 }

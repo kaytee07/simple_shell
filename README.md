@@ -1,5 +1,4 @@
-# Simple Shell Project
+#### Simple Shell Project
 
-A simple implementation of a shell in C programming language,
-designed to execute basic commands.
+implement shell with the C programming language that execute basic codes
 

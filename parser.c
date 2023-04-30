@@ -1,45 +1,43 @@
 #include "shell.h"
 
+
 /**
- * is_cmd - determines if a file is an executable command
- * @info: the info struct
- * @path: path to the file
- *
+ * is_cmd - shows if file is an executable commandof
+ * @info: the struct info
+ * @path: path of the  file
  * Return: 1 if true, 0 otherwise
  */
 int is_cmd(info_t *info, char *path)
 {
-	struct stat st;
+    struct stat st;
 
-	(void)info;
-	if (!path || stat(path, &st))
-		return (0);
+    if (!path || stat(path, &st))
+        return (0);
 
-	if (st.st_mode & S_IFREG)
-	{
-		return (1);
-	}
-	return (0);
+    return (S_ISREG(st.st_mode));
 }
 
 /**
  * dup_chars - duplicates characters
  * @pathstr: the PATH string
- * @start: starting index
- * @stop: stopping index
- *
+ * @start: starting of the index
+ * @stop: stopping of the index
  * Return: pointer to new buffer
  */
 char *dup_chars(char *pathstr, int start, int stop)
 {
-	static char buf[1024];
-	int i = 0, k = 0;
+    char *buf = malloc(stop - start + 1);
 
-	for (k = 0, i = start; i < stop; i++)
-		if (pathstr[i] != ':')
-			buf[k++] = pathstr[i];
-	buf[k] = 0;
-	return (buf);
+    if (!buf)
+        return (NULL);
+
+    int i, k;
+    for (k = 0, i = start; i < stop; i++)
+        if (pathstr[i] != ':')
+            buf[k++] = pathstr[i];
+
+    buf[k] = '\0';
+    return (buf);
 }
 
 /**
@@ -52,35 +50,45 @@ char *dup_chars(char *pathstr, int start, int stop)
  */
 char *find_path(info_t *info, char *pathstr, char *cmd)
 {
-	int i = 0, curr_pos = 0;
-	char *path;
+    if (!pathstr)
+        return (NULL);
 
-	if (!pathstr)
-		return (NULL);
-	if ((_strlen(cmd) > 2) && starts_with(cmd, "./"))
-	{
-		if (is_cmd(info, cmd))
-			return (cmd);
-	}
-	while (1)
-	{
-		if (!pathstr[i] || pathstr[i] == ':')
-		{
-			path = dup_chars(pathstr, curr_pos, i);
-			if (!*path)
-				_strcat(path, cmd);
-			else
-			{
-				_strcat(path, "/");
-				_strcat(path, cmd);
-			}
-			if (is_cmd(info, path))
-				return (path);
-			if (!pathstr[i])
-				break;
-			curr_pos = i;
-		}
-		i++;
-	}
-	return (NULL);
+    if ((_strlen(cmd) > 2) && starts_with(cmd, "./"))
+    {
+        if (is_cmd(info, cmd))
+            return (cmd);
+    }
+
+    char *path = NULL;
+    char *curr_pos = pathstr;
+    int len = _strlen(cmd);
+
+    while (*curr_pos)
+    {
+        char *next_pos = _strchr(curr_pos, ':');
+        if (!next_pos)
+            next_pos = curr_pos + _strlen(curr_pos);
+
+        int path_len = next_pos - curr_pos;
+        int total_len = path_len + 1 + len;
+
+        path = malloc(total_len + 1);
+        if (!path)
+            return (NULL);
+
+        _strncpy(path, curr_pos, path_len);
+        path[path_len] = '/';
+        _strncpy(path + path_len + 1, cmd, len);
+        path[total_len] = '\0';
+
+        if (is_cmd(info, path))
+            return (path);
+
+        curr_pos = next_pos;
+        if (*next_pos)
+            curr_pos++;
+        bfree((void **)&path);
+    }
+
+    return (NULL);
 }

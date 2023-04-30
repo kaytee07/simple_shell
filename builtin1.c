@@ -1,115 +1,91 @@
 #include "shell.h"
 
 /**
- * _myhistory - displays the history list, one command by line, preceded
- *              with line numbers, starting at 0.
+ * _mycd - changes the current working directory of the shell
  * @info: Structure containing potential arguments. Used to maintain
  *        constant function prototype.
- *  Return: Always 0
+ *
+ * Return: Always 0
  */
-int _myhistory(info_t *info)
+int _mycd(info_t *info)
 {
-	print_list(info->history);
+	char *dir = NULL, *pwd = NULL, *oldpwd = NULL;
+
+	if (info->argc == 1 || _strcmp(info->argv[1], "~") == 0)
+		dir = _getenv("HOME");
+	else if (_strcmp(info->argv[1], "-") == 0)
+	{
+		dir = _getenv("OLDPWD");
+		if (dir == NULL)
+		{
+			_puts("cd: OLDPWD not set\n");
+			return (1);
+		}
+	}
+	else
+		dir = info->argv[1];
+	if (dir == NULL || chdir(dir) == -1)
+	{
+		perror("cd");
+		return (1);
+	}
+	pwd = _getcwd();
+	oldpwd = _getenv("PWD");
+	if (oldpwd)
+		set_env(&info->env, "OLDPWD", oldpwd);
+	set_env(&info->env, "PWD", pwd);
+	free(pwd);
 	return (0);
 }
 
 /**
- * unset_alias - sets alias to string
- * @info: parameter struct
- * @str: the string alias
+ * _myenv - prints the environment
+ * @info: Structure containing potential arguments. Used to maintain
+ *        constant function prototype.
  *
- * Return: Always 0 on success, 1 on error
+ * Return: Always 0
  */
-int unset_alias(info_t *info, char *str)
+int _myenv(info_t *info)
 {
-	char *p, c;
-	int ret;
-
-	p = _strchr(str, '=');
-	if (!p)
-		return (1);
-	c = *p;
-	*p = 0;
-	ret = delete_node_at_index(&(info->alias),
-		get_node_index(info->alias, node_starts_with(info->alias, str, -1)));
-	*p = c;
-	return (ret);
+	print_list(info->env);
+	return (0);
 }
 
 /**
- * set_alias - sets alias to string
- * @info: parameter struct
- * @str: the string alias
- *
- * Return: Always 0 on success, 1 on error
- */
-int set_alias(info_t *info, char *str)
-{
-	char *p;
-
-	p = _strchr(str, '=');
-	if (!p)
-		return (1);
-	if (!*++p)
-		return (unset_alias(info, str));
-
-	unset_alias(info, str);
-	return (add_node_end(&(info->alias), str, 0) == NULL);
-}
-
-/**
- * print_alias - prints an alias string
- * @node: the alias node
- *
- * Return: Always 0 on success, 1 on error
- */
-int print_alias(list_t *node)
-{
-	char *p = NULL, *a = NULL;
-
-	if (node)
-	{
-		p = _strchr(node->str, '=');
-		for (a = node->str; a <= p; a++)
-			_putchar(*a);
-		_putchar('\'');
-		_puts(p + 1);
-		_puts("'\n");
-		return (0);
-	}
-	return (1);
-}
-
-/**
- * _myalias - mimics the alias builtin (man alias)
+ * _myexit - exits the shell
  * @info: Structure containing potential arguments. Used to maintain
  *          constant function prototype.
- *  Return: Always 0
+ *
+ * Return: Always 0
  */
-int _myalias(info_t *info)
+int _myexit(info_t *info)
 {
-	int i = 0;
-	char *p = NULL;
-	list_t *node = NULL;
+	int exit_code = 0;
 
-	if (info->argc == 1)
-	{
-		node = info->alias;
-		while (node)
-		{
-			print_alias(node);
-			node = node->next;
-		}
-		return (0);
-	}
-	for (i = 1; info->argv[i]; i++)
-	{
-		p = _strchr(info->argv[i], '=');
-		if (p)
-			set_alias(info, info->argv[i]);
-		else
-			print_alias(node_starts_with(info->alias, info->argv[i], '='));
-	}
+	if (info->argc > 1)
+		exit_code = _atoi(info->argv[1]);
+	free_info(info);
+	exit(exit_code);
+}
 
+/**
+ * _myecho - displays a message
+ * @info: Structure containing potential arguments. Used to maintain
+ *        constant function prototype.
+ *
+ * Return: Always 0
+ */
+int _myecho(info_t *info)
+{
+	int i = 1;
+
+	while (info->argv[i])
+	{
+		_puts(info->argv[i]);
+		if (info->argv[++i])
+			_putchar(' ');
+	}
+	_putchar('\n');
 	return (0);
 }
+

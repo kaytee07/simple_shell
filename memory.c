@@ -8,11 +8,5 @@
  */
 int bfree(void **ptr)
 {
-	if (ptr && *ptr)
-	{
-		free(*ptr);
-		*ptr = NULL;
-		return (1);
-	}
-	return (0);
+	return ptr && *ptr ? (free(*ptr), *ptr = NULL, 1) : 0;
 }

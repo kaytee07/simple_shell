@@ -12,7 +12,7 @@ int _erratoi(char *s)
 	unsigned long int result = 0;
 
 	if (*s == '+')
-		s++;  /* TODO: why does this make main return 255? */
+		s++;
 	for (i = 0;  s[i] != '\0'; i++)
 	{
 		if (s[i] >= '0' && s[i] <= '9')
@@ -32,8 +32,7 @@ int _erratoi(char *s)
  * print_error - prints an error message
  * @info: the parameter & return info struct
  * @estr: string containing specified error type
- * Return: 0 if no numbers in string, converted number otherwise
- *        -1 on error
+ * Return: void
  */
 void print_error(info_t *info, char *estr)
 {
@@ -105,7 +104,6 @@ char *convert_number(long int num, int base, int flags)
 	{
 		n = -num;
 		sign = '-';
-
 	}
 	array = flags & CONVERT_LOWERCASE ? "0123456789abcdef" : "0123456789ABCDEF";
 	ptr = &buffer[49];
@@ -125,16 +123,60 @@ char *convert_number(long int num, int base, int flags)
  * remove_comments - function replaces first instance of '#' with '\0'
  * @buf: address of the string to modify
  *
- * Return: Always 0;
+ * Return: void
  */
 void remove_comments(char *buf)
 {
+    int i;
+
+    for (i = 0; buf[i] != '\0'; i++)
+    {
+        if (buf[i] == '#' && (i == 0 || buf[i - 1] == ' '))
+        {
+            buf[i] = '\0';
+            break;
+        }
+    }
+}
+
+/**
+ * remove_whitespace - function removes trailing whitespace
+ * @buf: address of the string to modify
+ *
+ * Return: Always 0;
+ */
+void remove_whitespace(char *buf)
+{
 	int i;
 
-	for (i = 0; buf[i] != '\0'; i++)
-		if (buf[i] == '#' && (!i || buf[i - 1] == ' '))
-		{
-			buf[i] = '\0';
-			break;
-		}
+	for (i = _strlen(buf) - 1; i >= 0 && _isspace(buf[i]); i--)
+		buf[i] = '\0';
 }
+
+/**
+ * _strlen - gets the length of a string
+ * @s: string
+ *
+ * Return: length of s
+ */
+int _strlen(char *s)
+{
+	int len = 0;
+
+	while (*s++)
+		len++;
+	return (len);
+}
+
+/**
+ * _isspace - determines if a character is whitespace
+ * @c: character to check
+ *
+ * Return: 1 if c is whitespace, otherwise 0
+ */
+int _isspace(char c)
+{
+	return (c == ' ' || c == '\t' || c == '\n' || c == '\r' || c == '\v');
+}
+
+
